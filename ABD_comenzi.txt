@@ -1,0 +1,154 @@
+Ex a) 
+db.target.aggregate([
+  {
+    $group: {
+      _id: "$state_name",
+      totalPopulation: { $sum: "$population" }
+    }
+  },
+  {
+    $match: {
+      totalPopulation: { $gt: 10000000 }
+    }
+  }
+])
+
+ 
+Ex b) 
+db.target.aggregate([
+  {
+    $group: {
+      _id: {
+        state: "$state_name",
+        city: "$city"
+      },
+      population: { $sum: "$population" }
+    }
+  },
+  {
+    $group: {
+      _id: "$_id.state",
+      averagePopulation: { $avg: "$population" }
+    }
+  }
+])
+
+ 
+ 
+Ex c) 
+db.target.aggregate([
+  {
+    $group: {
+      _id: {
+        state: "$state_name",
+        city: "$city"
+      },
+      population: { $sum: "$population" }
+    }
+  },
+  {
+    $sort: {
+      "population": -1
+    }
+  },
+  {
+    $group: {
+      _id: "$_id.state",
+      largestCity: { $first: "$_id.city" },
+      largestPopulation: { $first: "$population" },
+      smallestCity: { $last: "$_id.city" },
+      smallestPopulation: { $last: "$population" }
+    }
+  }
+])
+
+ 
+
+
+Ex d)
+db.target.aggregate([
+  {
+    $group: {
+      _id: {
+        state: "$state_name",
+        county: "$county_name"
+      },
+      population: { $sum: "$population" }
+    }
+  },
+  {
+    $sort: {
+      "population": -1
+    }
+  },
+  {
+    $group: {
+      _id: "$_id.state",
+      largestCounty: { $first: "$_id.county" },
+      largestPopulation: { $first: "$population" },
+      smallestCounty: { $last: "$_id.county" },
+      smallestPopulation: { $last: "$population" }
+    }
+  }
+])
+ 
+
+Ex e) 
+
+db.target.find().forEach(function(doc) {
+  var lat = parseFloat(doc.lat);
+  var lng = parseFloat(doc.lng);
+  db.target.updateOne(
+    { _id: doc._id },
+    { $set: { location: { type: "Point", coordinates: [lng, lat] } } }
+  );
+});
+
+db.target.createIndex({ location: "2dsphere" });
+
+db.target.aggregate([
+  {
+    $geoNear: {
+      near: {
+        type: "Point",
+        coordinates: [-87.635918, 41.878876]
+      },
+      distanceField: "distance",
+      spherical: true,
+      query: {}
+    }
+  },
+  {   $limit: 10   }
+])
+
+ 
+
+Ex f) db.target.aggregate([
+  {
+    $geoNear: {
+      near: {
+        type: "Point",
+        coordinates: [-74.044502, 40.689247]
+      },
+      distanceField: "distance",
+      spherical: true,
+      query: {}
+    }
+  },
+  {
+    $match: {
+      distance: {
+        $gte: 50000,   // 50 kilometers
+        $lte: 200000   // 200 kilometers
+      }
+    }
+  },
+  {
+    $group: {
+      _id: 0,
+      totalPopulation: { $sum: "$population" }
+    }
+  }
+])
+
+ 
